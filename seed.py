@@ -1,6 +1,7 @@
-from musica_api.database import engine
-from musica_api.models import Usuario, Cancion
 from sqlmodel import Session, select
+
+from musica_api.database import engine
+from musica_api.models import Cancion, Usuario
 
 usuarios = [
     ("Lina Chamorro", "lina@test.com"),
