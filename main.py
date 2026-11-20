@@ -1,92 +1,108 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import logging
+import time
 from contextlib import asynccontextmanager
 
-from app.database import create_db_and_tables
-from app.routers import usuarios, peliculas, favoritos
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-# TODO: Importar la configuración desde app.config
+from musica_api.config import settings
+from musica_api.database import create_db_and_tables, engine
+from musica_api.routers import canciones, favoritos, usuarios
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Gestor de ciclo de vida de la aplicación.
-    Se ejecuta al iniciar y al cerrar la aplicación.
-    """
-    # Startup: Crear tablas en la base de datos
     create_db_and_tables()
+    logger.info("App iniciada")
     yield
-    
-    # Shutdown: Limpiar recursos si es necesario
-    print("cerrando aplicación...")
+    logger.info("Cerrando aplicación...")
+    engine.dispose()
 
 
-# Crear la instancia de FastAPI con metadatos apropiados
-# Incluir: title, description, version, contact, license_info
 app = FastAPI(
-    title="API de Películas",
-    description="API RESTful para gestionar usuarios, películas y favoritos",
+    title="API de Música",
+    description="API RESTful para gestionar usuarios, canciones y favoritos. FastAPI + SQLModel + Pydantic.",
     version="1.0.0",
     lifespan=lifespan,
-    # TODO: Agregar información de contacto y licencia
-
+    contact={
+        "name": "Lina Fernanda Chamorro Diaz",
+        "email": "lina.chamorro.0604@miremington.edu.co",
+    },
+    license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
-
-
-# Configurar CORS para permitir solicitudes desde diferentes orígenes
-# Esto es importante para desarrollo con frontend separado
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, especificar orígenes permitidos
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# TODO: Incluir los routers de usuarios, canciones y favoritos
-# Ejemplo:
-# app.include_router(usuarios.router, prefix="/api/usuarios", tags=["Usuarios"])
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    logger.info(f"{request.method} {request.url.path} - {response.status_code} - {time.time() - start:.4f}s")
+    return response
 
 
-# Crear un endpoint raíz que retorne información básica de la API
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Recurso no encontrado", "path": str(request.url.path)},
+    )
+
+
+@app.exception_handler(500)
+async def internal_error_handler(request: Request, exc):
+    logger.error(f"Error interno: {exc}")
+    return JSONResponse(status_code=500, content={"detail": "Error interno del servidor"})
+
+
+app.include_router(usuarios.router, prefix="/api/usuarios", tags=["Usuarios"])
+app.include_router(canciones.router, prefix="/api/canciones", tags=["Canciones"])
+app.include_router(favoritos.router, prefix="/api/favoritos", tags=["Favoritos"])
+
+
 @app.get("/", tags=["Root"])
 async def root():
-    """
-    Endpoint raíz de la API.
-    Retorna información básica y enlaces a la documentación.
-    """
     return {
-        # TODO: Agregar información 
+        "mensaje": "Bienvenido a la API de Música",
+        "version": "1.0.0",
+        "autora": "Lina Fernanda Chamorro Diaz",
+        "documentacion": "/docs",
+        "endpoints": {
+            "usuarios": "/api/usuarios",
+            "canciones": "/api/canciones",
+            "favoritos": "/api/favoritos",
+        },
     }
 
 
-# Crear un endpoint de health check para monitoreo
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """
-    Health check endpoint para verificar el estado de la API.
-    Útil para sistemas de monitoreo y orquestación.
-    """
+    try:
+        with engine.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
+        db_status = "conectada"
+    except Exception as e:
+        logger.error(f"Error BD: {e}")
+        return JSONResponse(status_code=503, content={"status": "unhealthy", "database": "error"})
     return {
         "status": "healthy",
-        # TODO: Agregar verificación de conexión a base de datos
-        # TODO: Agregar información sobre el sistema (uptime, memoria, etc.)
+        "database": db_status,
+        "version": "1.0.0",
+        "entorno": settings.environment,
     }
-
-
-# TODO: Opcional - Agregar middleware para logging de requests
-
-
-# TODO: Opcional - Agregar manejadores de errores personalizados
 
 
 if __name__ == "__main__":
     import uvicorn
-    
-    uvicorn.run(
-        # TODO: Configurar el servidor uvicorn con los parámetros apropiados
-    )
 
-
+    uvicorn.run("main:app", host=settings.host, port=settings.port, reload=True)

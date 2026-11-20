@@ -1,155 +1,183 @@
 # API de Música
 
-Una [API RESTful](https://aws.amazon.com/es/what-is/restful-api/) para gestionar usuarios, canciones y favoritos. Desarrollada con [FastAPI](https://fastapi.tiangolo.com/), [SQLModel](https://sqlmodel.tiangolo.com/) y [Pydantic](https://docs.pydantic.dev/).
+API RESTful para gestionar usuarios, canciones y favoritos. Hecha con FastAPI, SQLModel y Pydantic.
+
+## Datos del estudiante
+
+- Nombre: Lina Fernanda Chamorro Diaz
+- Correo: lina.chamorro.0604@miremington.edu.co
+- Asignatura: Lenguaje de Programación Avanzado 2
+- Docente: Diego Fernando  Marin lozano
+- Repositorio: lpa2-taller3_2026
 
 ## Descripción
 
 Esta API permite administrar:
-- **Usuarios**: crear y gestionar perfiles de usuarios.
-- **Canciones**: agregar, actualizar y eliminar canciones con sus metadatos.
-- **Favoritos**: gestionar las canciones favoritas de cada usuario.
 
-El proyecto incluye una interfaz de documentación interactiva generada automáticamente con [Swagger](https://swagger.io/) disponible en el *endpoint* `/docs`.
+- Usuarios: crear y gestionar perfiles de usuarios.
+- Canciones: agregar, actualizar y eliminar canciones.
+- Favoritos: gestionar las canciones favoritas de cada usuario.
+
+El proyecto incluye documentación interactiva generada automáticamente con Swagger, disponible en el endpoint /docs.
 
 ## Estructura del Proyecto
-
-```
-lpa2-taller3
-├──  README.md            # Este archivo, documentación completa del proyecto
-├──  .env                 # Variables de entorno (desarrollo, pruebas, producción)
-├──  .gitignore           # Archivos y directorios a ignorar por Git
-├──  main.py              # Script principal para ejecutar la aplicación
-├──  musica.db            # Base de Datos
-├──  musica_api
-│   ├──  __init__.py      # Inicialización del módulo
-│   └──  *                # Implementación del API
-├── 󰌠 requirements.txt     # Dependencias del proyecto
-├── 󰙨 tests
-│   └──  test_api.py      # Pruebas Unitarias
-└──  utils.py             # Funciones de utilidad
-
-```
+lpa2-taller3_2026
+├── .env                 # Variables de entorno
+├── .gitignore           # Archivos que ignora Git
+├── .pre-commit-config.yaml # Configuración de pre-commit
+├── README.md            # Documentación del proyecto
+├── main.py              # Archivo principal para ejecutar la aplicación
+├── musica.db            # Base de datos
+├── pyproject.toml       # Configuración del proyecto
+├── pytest.ini           # Configuración de pytest
+├── requirements.txt     # Dependencias del proyecto
+├── seed.py              # Script para cargar datos de ejemplo
+├── utils.py             # Funciones de utilidad
+├── .github
+│   └── workflows
+│       └── ci.yml       # Workflow de GitHub Actions
+├── musica_api
+│   ├── __init__.py      # Inicialización del módulo
+│   ├── config.py        # Configuración
+│   ├── database.py      # Conexión a la base de datos
+│   ├── models.py        # Modelos de la base de datos
+│   ├── schemas.py       # Esquemas de validación con Pydantic
+│   └── routers
+│       ├── __init__.py  # Inicialización de routers
+│       ├── canciones.py # Endpoints de canciones
+│       ├── favoritos.py # Endpoints de favoritos
+│       └── usuarios.py  # Endpoints de usuarios
+└── tests
+    └── test_api.py      # Pruebas unitarias
+    
 ## Modelo de Datos
 
-1. **Usuario**:
-   - id: Identificador único
-   - nombre: Nombre del usuario
-   - correo: Correo electrónico (único)
-   - fecha_registro: Fecha de registro
+Usuario:
+- id: Identificador único
+- nombre: Nombre del usuario
+- correo: Correo electrónico (único)
+- fecha_registro: Fecha de registro
 
-2. **Canción**:
-   - id: Identificador único
-   - titulo: Título de la canción
-   - artista: Artista o intérprete
-   - album: Álbum al que pertenece
-   - duracion: Duración en segundos
-   - año: Año de lanzamiento
-   - genero: Género musical
-   - fecha_creacion: Fecha de creación del registro
+Canción:
+- id: Identificador único
+- titulo: Título de la canción
+- artista: Artista o intérprete
+- album: Álbum al que pertenece
+- duracion: Duración en segundos
+- año: Año de lanzamiento
+- genero: Género musical
+- fecha_creacion: Fecha de creación del registro
 
-3. **Favorito**:
-   - id: Identificador único
-   - id_usuario: ID del usuario (clave foránea)
-   - id_cancion: ID de la canción (clave foránea)
-   - fecha_marcado: Fecha en que se marcó como favorito
+Favorito:
+- id: Identificador único
+- id_usuario: ID del usuario (clave foránea)
+- id_cancion: ID de la canción (clave foránea)
+- fecha_marcado: Fecha en que se marcó como favorito
 
-## Instalación
+## INSTALACION
 
-1. Clona este repositorio:
+## 1_Clonar el repositorio:
+git clone https://github.com/UR-CC/lpa2-taller3.git
+cd lpa2-taller3_2026
 
-   ```bash
-   git clone https://github.com/UR-CC/lpa2-taller3.git
-   cd lpa2-taller3
-   ```
+## 2_Crear y activar el entorno virtual:
+python -m venv .venv
+source .venv/bin/activate
 
-2. Crea y activa un entorno virtual:
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
-
-3. Instala las dependencias:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Ajusta las variables de entorno, editando el archivo `.env`
+## 3_Instalar las dependencias:
+pip install -r requirements.txt
 
 ## Ejecución
 
-1. Ejecuta la aplicación:
+## 1_Ejecutar la aplicación:
 
-   ```bash
-   uvicorn main:app --reload
-   ```
+uvicorn main:app --reload
 
-2. Accede a la aplicación:
-   - API: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
-   - Documentación *Swagger UI*: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-   - Documentación *ReDoc*: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+## Acceder a:
+
+- API: http://127.0.0.1:8000/
+- Documentación Swagger UI: http://127.0.0.1:8000/docs
+- Documentación ReDoc: http://127.0.0.1:8000/redoc
 
 ## Uso de la API
 
-### Usuarios
+Usuarios
+- Listar usuarios: GET /api/usuarios
+- Crear usuario: POST /api/usuarios
+- Obtener usuario: GET /api/usuarios/{id}
+- Actualizar usuario: PUT /api/usuarios/{id}
+- Eliminar usuario: DELETE /api/usuarios/{id}
 
-- **Listar usuarios**: `GET /api/usuarios`
-- **Crear usuario**: `POST /api/usuarios`
-- **Obtener usuario**: `GET /api/usuarios/{id}`
-- **Actualizar usuario**: `PUT /api/usuarios/{id}`
-- **Eliminar usuario**: `DELETE /api/usuarios/{id}`
+Canciones
+- Listar canciones: GET /api/canciones
+- Crear canción: POST /api/canciones
+- Obtener canción: GET /api/canciones/{id}
+- Actualizar canción: PUT /api/canciones/{id}
+- Eliminar canción: DELETE /api/canciones/{id}
+- Buscar canciones: GET /api/canciones/buscar?titulo=value&artista=value&genero=value
 
-### Canciones
-
-- **Listar canciones**: `GET /api/canciones`
-- **Crear canción**: `POST /api/canciones`
-- **Obtener canción**: `GET /api/canciones/{id}`
-- **Actualizar canción**: `PUT /api/canciones/{id}`
-- **Eliminar canción**: `DELETE /api/canciones/{id}`
-- **Buscar canciones**: `GET /api/canciones/buscar?titulo=value&artista=value&genero=value`
-
-### Favoritos
-
-- **Listar favoritos**: `GET /api/favoritos`
-- **Marcar favorito**: `POST /api/favoritos`
-- **Obtener favorito**: `GET /api/favoritos/{id}`
-- **Eliminar favorito**: `DELETE /api/favoritos/{id}`
-- **Listar favoritos de usuario**: `GET /api/usuarios/{id}/favoritos`
-- **Marcar favorito específico**: `POST /api/usuarios/{id_usuario}/favoritos/{id_cancion}`
-- **Eliminar favorito específico**: `DELETE /api/usuarios/{id_usuario}/favoritos/{id_cancion}`
+Favoritos
+- Listar favoritos: GET /api/favoritos
+- Marcar favorito: POST /api/favoritos
+- Obtener favorito: GET /api/favoritos/{id}
+- Eliminar favorito: DELETE /api/favoritos/{id}
+- Listar favoritos de usuario: GET /api/usuarios/{id}/favoritos
+- Marcar favorito específico: POST /api/usuarios/{id_usuario}/favoritos/{id_cancion}
+- Eliminar favorito específico: DELETE /api/usuarios/{id_usuario}/favoritos/{id_cancion}
 
 ## Desarrollo del Taller
 
-1. Ajustar este `README.md` con los datos del Estudiante
+1. Ajustar README con los datos del estudiante
+Listo. Los datos quedaron en la parte de arriba de este archivo.
 
-2. Utilizando [DBeaver](https://dbeaver.io/), adiciona 5 usuarios y 10 canciones, directo a las tablas.
+2. Datos en DBeaver
+Se agregaron directo en las tablas con DBeaver:
+- 5 usuarios en la tabla usuario
+- 10 canciones en la tabla cancion
 
-3. Adicionar `pre-commit` y `workflow` de GitHub Actions para **ruff** *linter* y *formatter*, y para **pytest**.
+3. Pre-commit y GitHub Actions
+Se agregó el archivo .pre-commit-config.yaml y el workflow en .github/workflows/ci.yml para correr ruff (linter y formatter) y pytest en cada push y pull request.
 
-4. Busca todos los comentarios `# TODO` y `# FIXME`, realiza los ajustes necesarios, y ejecuta un `commit` por cada uno. Usa Pydantic para la validación de datos.
+## Para correrlo en local:
+pre-commit run --all-files
+ruff check .
+ruff format .
+pytest -v
 
-5. Prueba el funcionamiento del API, desde la documentación *Swagger UI* o *ReDoc*.
 
-6. Desarrolla las pruebas automatizadas para verificar el funcionamiento correcto de la API.
+4. Validación con Pydantic
+Se usan schemas en musica_api/schemas.py, por ejemplo CancionCreate y CancionUpdate, con model_dump() para validar los datos antes de guardarlos en la base de datos.
 
-7. Implementar dos (2) de las sugerencias que se presentan a continuación.
+5. Prueba en Swagger UI / ReDoc
+Se probó el funcionamiento en /docs. Se probó crear un favorito, listar canciones y usuarios. También se verificó el error cuando se intenta crear un favorito duplicado y el código 201 al crear.
+
+6. Pruebas automatizadas
+Están en tests/test_api.py con pytest y TestClient. Verifican crear usuario, crear canción, crear favorito, que no se pueda repetir un favorito, la paginación y el health check.
+
+pytest -v
+
 
 ## Sugerencias de Mejora
 
-1. **Autenticación y autorización**: Implementar JWT o OAuth2 para proteger los endpoints y asociar los usuarios automáticamente con sus favoritos.
+Para este taller se implementaron 2:
 
-2. **Paginación**: Añadir soporte para paginación en las listas de canciones, usuarios y favoritos para mejorar el rendimiento con grandes volúmenes de datos.
+1. Paginación
+En GET /api/canciones/, GET /api/usuarios/ y GET /api/favoritos/ se puede usar skip y limit:
 
-3. **Base de datos en producción**: Migrar a una base de datos más robusta como PostgreSQL o MySQL para entornos de producción.
+GET /api/canciones/?skip=0&limit=10
+GET /api/canciones/?skip=10&limit=10
 
-4. **Docker**: Contenerizar la aplicación para facilitar su despliegue en diferentes entornos.
+Se hizo con Query(0, ge=0) y Query(10, ge=1, le=100) para no traer toda la tabla de una vez.
 
-5. **Registro (logging)**: Implementar un sistema de registro más completo para monitorear errores y uso de la API.
+2. Registro (logging)
+En main.py se agregó un middleware con logging que registra el método, la ruta, el status y el tiempo de cada petición, además de los errores de base de datos y los errores 500.
 
-6. **Caché**: Añadir caché para mejorar la velocidad de respuesta en consultas frecuentes.
-
-7. **Estadísticas de uso**: Implementar un sistema de seguimiento para analizar qué canciones son más populares y sugerir recomendaciones basadas en preferencias similares.
-
-8. **Subida de archivos**: Permitir la subida de archivos de audio y gestionar su almacenamiento en un servicio como S3 o similar.
-
+Otras sugerencias que no se implementaron en este taller:
+- Autenticación y autorización con JWT o OAuth2
+- Base de datos en producción como PostgreSQL o MySQL
+- Docker
+- Caché
+- Estadísticas de uso
+- Subida de archivos de audio a S3

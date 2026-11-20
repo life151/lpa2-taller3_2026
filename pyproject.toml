@@ -1,0 +1,15 @@
+[project]
+name = "lpa2-taller3-2026"
+version = "1.0.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["B008", "BLE001", "E501"]

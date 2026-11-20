@@ -1,296 +1,211 @@
-"""
-Tests para la API de Música.
-Pruebas unitarias y de integración usando pytest.
-"""
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from main import app
-from app.database import get_session
-from app.models import Usuario, Cancion, Favorito
+from musica_api.database import get_session
+from musica_api.models import Cancion, Usuario
 
 
-# =============================================================================
-# CONFIGURACIÓN DE FIXTURES
-# =============================================================================
-
-# Fixture para crear una base de datos en memoria para testing
 @pytest.fixture(name="session")
 def session_fixture():
-    """
-    Crea una sesión de base de datos en memoria para cada test.
-    Se limpia automáticamente después de cada test.
-    """
-    # TODO: Crear engine en memoria (SQLite)
-    
-    # TODO: Crear todas las tablas
-    
-    # TODO: Crear sesión
-
-    pass
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
 
 
-# Fixture para cliente de pruebas
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
-    """
-    Crea un cliente de pruebas de FastAPI con la sesión de test.
-    """
-    # TODO: Override de la dependencia get_session
-    
-    pass
+    def get_session_override():
+        yield session
+
+    app.dependency_overrides[get_session] = get_session_override
+    c = TestClient(app)
+    yield c
+    app.dependency_overrides.clear()
 
 
-# TODO: Fixture para crear usuarios de prueba
 @pytest.fixture(name="usuario_test")
 def usuario_test_fixture(session: Session):
-    """
-    Crea un usuario de prueba en la base de datos.
-    """
-  
-    pass
+    u = Usuario(nombre="Lina Chamorro", correo="lina@test.com")
+    session.add(u)
+    session.commit()
+    session.refresh(u)
+    return u
 
 
-# TODO: Fixture para crear canciones de prueba
-@pytest.fixture(name="musica_test")
+@pytest.fixture(name="cancion_test")
 def cancion_test_fixture(session: Session):
-    """
-    Crea una cancion de prueba en la base de datos.
-    """
-    # cancion = Cancion(
-    #     titulo="canción Test",
-    #     director="Director Test",
-    #     genero="Drama",
-    #     duracion=120,
-    #     año=2020,
-    #     clasificacion="PG-13",
-    #     sinopsis="Una canción de prueba"
-    # )
-    # session.add(cancion)
-    # session.commit()
-    # session.refresh(cancion)
-    # return cancion
-    pass
+    c = Cancion(
+        titulo="Canción Test",
+        artista="Artista Test",
+        album="Álbum Test",
+        duracion=210,
+        año=2020,
+        genero="Pop",
+    )
+    session.add(c)
+    session.commit()
+    session.refresh(c)
+    return c
 
 
-# =============================================================================
-# TESTS DE USUARIOS
-# =============================================================================
+@pytest.fixture(name="musica_test")
+def musica_test_fixture(cancion_test):
+    return cancion_test
+
 
 class TestUsuarios:
-    """Tests para los endpoints de usuarios."""
-    
-    # TODO: Test para listar usuarios
     def test_listar_usuarios(self, client: TestClient):
-        """Test para GET /api/usuarios"""
+        assert client.get("/api/usuarios/").status_code == 200
 
-        pass
-    
-    # TODO: Test para crear usuario
     def test_crear_usuario(self, client: TestClient):
-        """Test para POST /api/usuarios"""
+        assert client.post("/api/usuarios/", json={"nombre": "Ana", "correo": "ana@test.com"}).status_code == 201
 
-        pass
-    
-    # TODO: Test para crear usuario con correo duplicado
     def test_crear_usuario_correo_duplicado(self, client: TestClient, usuario_test: Usuario):
-        """Test para verificar que no se permiten correos duplicados"""
+        assert client.post("/api/usuarios/", json={"nombre": "Otro", "correo": "lina@test.com"}).status_code == 400
 
-        pass
-    
-    # TODO: Test para obtener usuario por ID
     def test_obtener_usuario(self, client: TestClient, usuario_test: Usuario):
-        """Test para GET /api/usuarios/{id}"""
+        assert client.get(f"/api/usuarios/{usuario_test.id}").status_code == 200
 
-        pass
-    
-    # TODO: Test para obtener usuario inexistente
     def test_obtener_usuario_no_existe(self, client: TestClient):
-        """Test para verificar error 404 con usuario inexistente"""
+        assert client.get("/api/usuarios/9999").status_code == 404
 
-        pass
-    
-    # TODO: Test para actualizar usuario
     def test_actualizar_usuario(self, client: TestClient, usuario_test: Usuario):
-        """Test para PUT /api/usuarios/{id}"""
+        assert client.put(f"/api/usuarios/{usuario_test.id}", json={"nombre": "Lina Actualizada"}).status_code == 200
 
-        pass
-    
-    # TODO: Test para eliminar usuario
     def test_eliminar_usuario(self, client: TestClient, usuario_test: Usuario):
-        """Test para DELETE /api/usuarios/{id}"""
+        assert client.delete(f"/api/usuarios/{usuario_test.id}").status_code == 200
 
-        pass
-
-
-# =============================================================================
-# TESTS DE canciónS
-# =============================================================================
 
 class TestCancions:
-    """Tests para los endpoints de cancións."""
-    
-    # TODO: Test para listar cancións
     def test_listar_cancions(self, client: TestClient):
-        """Test para GET /api/cancions"""
+        assert client.get("/api/canciones/").status_code == 200
 
-        pass
-    
-    # TODO: Test para crear canción
     def test_crear_cancion(self, client: TestClient):
-        """Test para POST /api/cancions"""
+        assert (
+            client.post(
+                "/api/canciones/",
+                json={
+                    "titulo": "X",
+                    "artista": "Y",
+                    "duracion": 180,
+                    "año": 2021,
+                    "genero": "Rock",
+                },
+            ).status_code
+            == 201
+        )
 
-        pass
-    
-    # TODO: Test para obtener canción por ID
     def test_obtener_cancion(self, client: TestClient, cancion_test: Cancion):
-        """Test para GET /api/cancions/{id}"""
+        assert client.get(f"/api/canciones/{cancion_test.id}").status_code == 200
 
-        pass
-    
-    # TODO: Test para actualizar canción
     def test_actualizar_cancion(self, client: TestClient, cancion_test: Cancion):
-        """Test para PUT /api/cancions/{id}"""
+        assert client.put(f"/api/canciones/{cancion_test.id}", json={"titulo": "Nueva"}).status_code == 200
 
-        pass
-    
-    # TODO: Test para eliminar canción
     def test_eliminar_cancion(self, client: TestClient, cancion_test: Cancion):
-        """Test para DELETE /api/cancions/{id}"""
+        assert client.delete(f"/api/canciones/{cancion_test.id}").status_code == 200
 
-        pass
-    
-    # TODO: Test para buscar cancións
     def test_buscar_cancions(self, client: TestClient, cancion_test: Cancion):
-        """Test para GET /api/cancions/buscar"""
+        assert client.get("/api/canciones/buscar?titulo=Canción").status_code == 200
 
-        pass
-    
-    # TODO: Test para buscar cancións con múltiples filtros
     def test_buscar_cancions_multiples_filtros(self, client: TestClient):
-        """Test para búsqueda con múltiples parámetros"""
+        assert client.get("/api/canciones/buscar?artista=Artista&genero=Pop").status_code == 200
 
-        pass
-
-
-# =============================================================================
-# TESTS DE FAVORITOS
-# =============================================================================
 
 class TestFavoritos:
-    """Tests para los endpoints de favoritos."""
-    
-    # TODO: Test para listar favoritos
     def test_listar_favoritos(self, client: TestClient):
-        """Test para GET /api/favoritos"""
+        assert client.get("/api/favoritos/").status_code == 200
 
-        pass
-    
-    # TODO: Test para crear favorito
-    def test_crear_favorito(
-        self, 
-        client: TestClient, 
-        usuario_test: Usuario, 
-        cancion_test: Cancion
-    ):
-        """Test para POST /api/favoritos"""
+    def test_crear_favorito(self, client: TestClient, usuario_test: Usuario, cancion_test: Cancion):
+        assert (
+            client.post(
+                "/api/favoritos/",
+                json={"id_usuario": usuario_test.id, "id_cancion": cancion_test.id},
+            ).status_code
+            == 201
+        )
 
-        pass
-    
-    # TODO: Test para crear favorito duplicado
-    def test_crear_favorito_duplicado(
-        self, 
-        client: TestClient, 
-        usuario_test: Usuario, 
-        cancion_test: Cancion
-    ):
-        """Test para verificar que no se permiten favoritos duplicados"""
+    def test_crear_favorito_duplicado(self, client: TestClient, usuario_test: Usuario, cancion_test: Cancion):
+        client.post(
+            "/api/favoritos/",
+            json={"id_usuario": usuario_test.id, "id_cancion": cancion_test.id},
+        )
+        assert (
+            client.post(
+                "/api/favoritos/",
+                json={"id_usuario": usuario_test.id, "id_cancion": cancion_test.id},
+            ).status_code
+            == 400
+        )
 
-        pass
-    
-    # TODO: Test para eliminar favorito
     def test_eliminar_favorito(
-        self, 
-        client: TestClient, 
+        self,
+        client: TestClient,
         session: Session,
-        usuario_test: Usuario, 
-        cancion_test: Cancion
+        usuario_test: Usuario,
+        cancion_test: Cancion,
     ):
-        """Test para DELETE /api/favoritos/{id}"""
+        r = client.post(
+            "/api/favoritos/",
+            json={"id_usuario": usuario_test.id, "id_cancion": cancion_test.id},
+        )
+        assert client.delete(f"/api/favoritos/{r.json()['id']}").status_code == 200
 
-        pass
-    
-    # TODO: Test para marcar favorito desde usuario
-    def test_marcar_favorito_usuario(
-        self, 
-        client: TestClient, 
-        usuario_test: Usuario, 
-        cancion_test: Cancion
-    ):
-        """Test para POST /api/usuarios/{id}/favoritos/{id_cancion}"""
+    def test_marcar_favorito_usuario(self, client: TestClient, usuario_test: Usuario, cancion_test: Cancion):
+        assert client.post(f"/api/usuarios/{usuario_test.id}/favoritos/{cancion_test.id}").status_code == 201
 
-        pass
-    
-    # TODO: Test para listar favoritos de usuario
     def test_listar_favoritos_usuario(
-        self, 
-        client: TestClient, 
+        self,
+        client: TestClient,
         session: Session,
-        usuario_test: Usuario, 
-        cancion_test: Cancion
+        usuario_test: Usuario,
+        cancion_test: Cancion,
     ):
-        """Test para GET /api/usuarios/{id}/favoritos"""
+        client.post(
+            "/api/favoritos/",
+            json={"id_usuario": usuario_test.id, "id_cancion": cancion_test.id},
+        )
+        assert client.get(f"/api/usuarios/{usuario_test.id}/favoritos").status_code == 200
 
-        pass
-
-
-# =============================================================================
-# TESTS DE INTEGRACIÓN
-# =============================================================================
 
 class TestIntegracion:
-    """Tests de integración que prueban flujos completos."""
-    
-    # TODO: Test de flujo completo: crear usuario, canción y marcar favorito
     def test_flujo_completo(self, client: TestClient):
-        """Test que verifica el flujo completo de la aplicación"""
-        # 1. Crear usuario
+        u = client.post("/api/usuarios/", json={"nombre": "Test", "correo": "flujo@test.com"}).json()
+        c = client.post(
+            "/api/canciones/",
+            json={
+                "titulo": "Flow",
+                "artista": "A",
+                "duracion": 200,
+                "año": 2020,
+                "genero": "Pop",
+            },
+        ).json()
+        assert client.post("/api/favoritos/", json={"id_usuario": u["id"], "id_cancion": c["id"]}).status_code == 201
+        assert len(client.get(f"/api/usuarios/{u['id']}/favoritos").json()) == 1
 
-        # 2. Crear canción
-
-        # 3. Marcar como favorito
-
-        # 4. Verificar que aparece en favoritos del usuario
-
-        pass
-
-
-# =============================================================================
-# TESTS DE VALIDACIÓN
-# =============================================================================
 
 class TestValidacion:
-    """Tests para validaciones de datos."""
-    
-    # TODO: Test para validar email inválido
     def test_email_invalido(self, client: TestClient):
-        """Test para verificar validación de email"""
+        assert client.post("/api/usuarios/", json={"nombre": "Ana", "correo": "no-es-correo"}).status_code == 422
 
-        pass
-    
-    # TODO: Test para validar año de canción
     def test_año_cancion_invalido(self, client: TestClient):
-        """Test para verificar validación de año"""
+        assert (
+            client.post(
+                "/api/canciones/",
+                json={
+                    "titulo": "X",
+                    "artista": "Y",
+                    "duracion": 180,
+                    "año": 1800,
+                    "genero": "Rock",
+                },
+            ).status_code
+            == 422
+        )
 
-        pass
-    
-    # TODO: Test para validar campos requeridos
     def test_campos_requeridos(self, client: TestClient):
-        """Test para verificar que los campos requeridos son obligatorios"""
-
-        pass
-
-
+        assert client.post("/api/usuarios/", json={}).status_code == 422
